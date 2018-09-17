@@ -32,8 +32,11 @@ class entry(object):
 
 	def size(self):
 		return sys.getsizeof(n1)+sys.getsizeof(n2)+sys.getsizeof(n3)+sys.getsizeof(w1)+sys.getsizeof(w2)
+
 	def __gt__(self, other):
 		self.w1 > other.w1
+	def __lt__(self, other):
+		self.w1 <= other.w1
 
 def getKey(item):
 	return (item.w1+item.w2)
@@ -96,14 +99,38 @@ def merge():
 	out = open("sorted.txt", "w")
 	e1 = entry(tb1.readline().split(" "))
 	e2 = entry(tb2.readline().split(" "))
+	e1count = 0 #we will count how many from each we've read.  This will be limited to allowedmem per read
+	e2count = 0
 
 	while True:
-		if e1 > e2:
-			out.write(e2.toString()+"\n")
+		if e1count >= allowedMem and e2count >= allowedMem:
+			ta1 = open(".Ta1", "w")
+			ta2 = open(".Ta2", "w")
+			x=tb1.readline()
+			while x is not '':
+				ta1.write(x)
+				x=tb1.readline()
+			x=tb2.readline()
+			while x is not '':
+				ta2.write(x)
+				x=tb2.readline()
+			ta1.close()
+			ta2.close()
+			tb1.close()
+			tb2.close()
+			break
+		if (e1 > e2 and e1count < allowedMem) or e2count > allowedMem:
+			out.write(e2.toString()+" e2 "+str(e2count))
+			if len(e2.w2) < 10:
+				out.write("\n")
 			e2 = entry(tb2.readline().split(" "))
+			e1count += 1
 		else:
-			out.write(e1.toString()+"\n")
+			out.write(e1.toString()+" e1 "+str(e1count))
+			if len(e1.w2) < 10:
+				out.write("\n")
 			e1 = entry(tb1.readline().split(" "))
+			e2count += 1
 		
 
 
@@ -111,10 +138,10 @@ def merge():
 allowedMem = int((int(sys.argv[1])*1024*1024)/200) #number of items we can keep in memory at one time
 					      #for 100MB this is ~500,000 objects but a 1GB bin file
 					      #will have ~20,000,000 objects so we can only keep
-					      #~200 objects in memory at a time
+					      #~1/40th that number of objects in memory at a time
 print(allowedMem)
 open(".Tb1", "w").write("")
 open(".Tb2", "w").write("")
 
-readThrough("smallInput.bin")	# readThrough goes through this input file, 
+readThrough(sys.argv[2])	# readThrough goes through this input file, 
 merge()
